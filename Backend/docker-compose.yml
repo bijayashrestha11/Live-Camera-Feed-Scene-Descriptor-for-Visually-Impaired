@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  scene-descriptor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: scene-descriptor:latest
+    container_name: scene-descriptor
+    ports:
+      - "8080:8080"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8080
+      - LOG_LEVEL=INFO
+      - MODEL_DIR=/app/ml-models
+      - DEFAULT_MODEL=git
+      - CUDA_DEVICE=cuda:0
+    volumes:
+      # Mount models directory for persistence
+      - ./ml-models:/app/ml-models
+      # Mount data directory
+      - ./data:/app/data
+      # Mount logs directory
+      - ./logs:/app/logs
+    restart: unless-stopped
+    # GPU support (uncomment if using NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Optional: Redis for caching (future use)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: scene-descriptor-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+
+volumes:
+  ml-models:
+  logs:
+  # redis-data:
