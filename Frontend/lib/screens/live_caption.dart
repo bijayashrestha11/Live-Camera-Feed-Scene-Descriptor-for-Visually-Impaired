@@ -1,3 +1,4 @@
+import 'package:cammelive/config/app_config.dart';
 import 'package:cammelive/constants/colors.dart';
 import 'package:cammelive/constants/text_styles.dart';
 import 'package:cammelive/utils/navigator.dart';
@@ -15,9 +16,9 @@ import 'package:http/http.dart' as http;
 
 class P2PVideo extends StatefulWidget {
   const P2PVideo({Key? key}) : super(key: key);
-  // ignore: constant_identifier_names
-  //static const String SERVER_URL = "http://192.168.43.244:8080";
-  static const String SERVER_URL = "http://192.168.1.65:8080";
+
+  /// Server URL from configuration - update in lib/config/app_config.dart
+  static String get SERVER_URL => AppConfig.serverUrl;
 
   @override
   LiveCaptionState createState() => LiveCaptionState();
@@ -110,7 +111,8 @@ class LiveCaptionState extends State<P2PVideo> {
       print("WAITING FOR GATHERING COMPLETED");
       return true;
     } else {
-      await Future.delayed(Duration(seconds: 1));
+      // Reduced from 1 second to 100ms for faster response
+      await Future.delayed(const Duration(milliseconds: 100));
       return await _waitForGatheringComplete(_);
     }
   }
@@ -178,6 +180,10 @@ class LiveCaptionState extends State<P2PVideo> {
     });
     var configuration = <String, dynamic>{
       'sdpSemantics': 'unified-plan',
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun1.l.google.com:19302'},
+      ],
     };
 
     //* Create Peer Connection
@@ -231,6 +237,14 @@ class LiveCaptionState extends State<P2PVideo> {
       // display the local camera feed on the preview
       _localRenderer.srcObject = _localStream;
 
+      // Show STOP button immediately when camera starts
+      if (mounted) {
+        setState(() {
+          _inCalling = true;
+          _loading = false;
+        });
+      }
+
       stream.getTracks().forEach((element) {
         _peerConnection!.addTrack(element, stream);
       });
@@ -239,13 +253,14 @@ class LiveCaptionState extends State<P2PVideo> {
       await _negotiateRemoteConnection();
     } catch (e) {
       print(e.toString());
+      // Reset state if there's an error
+      if (mounted) {
+        setState(() {
+          _inCalling = false;
+          _loading = false;
+        });
+      }
     }
-    if (!mounted) return;
-
-    setState(() {
-      _inCalling = true;
-      _loading = false;
-    });
   }
 
   void _addDataChannel(RTCDataChannel channel) {
@@ -265,17 +280,37 @@ class LiveCaptionState extends State<P2PVideo> {
 
   Future<void> _stopCall() async {
     try {
-      // await _localStream?.dispose();
+      // Stop all tracks in the local stream
+      if (_localStream != null) {
+        for (var track in _localStream!.getTracks()) {
+          await track.stop();
+        }
+        await _localStream!.dispose();
+        _localStream = null;
+      }
+
+      // Close data channel
       await _dataChannel?.close();
+      _dataChannel = null;
+
+      // Close peer connection
       print("close peer connection");
       await _peerConnection?.close();
       _peerConnection = null;
+
+      // Clear the renderer
       _localRenderer.srcObject = null;
+
+      // Reset caption
+      _caption = "";
     } catch (e) {
       print(e.toString());
     }
+
+    if (!mounted) return;
     setState(() {
       _inCalling = false;
+      _loading = false;
     });
   }
 
@@ -292,6 +327,15 @@ class LiveCaptionState extends State<P2PVideo> {
   }
 
   @override
+  void dispose() {
+    _stopCall();
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
+    flutterTts.stop();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     bool isStop = true;
     return Scaffold(
@@ -299,7 +343,12 @@ class LiveCaptionState extends State<P2PVideo> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => navigateBack(context: context),
+          onPressed: () async {
+            await _stopCall();
+            if (context.mounted) {
+              navigateBack(context: context);
+            }
+          },
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
             color: Colors.black,
@@ -371,15 +420,33 @@ class LiveCaptionState extends State<P2PVideo> {
             ),
           ),
           Expanded(child: Container()),
-          customButton(
-            _inCalling ? "STOP" : "START",
-            width: MediaQuery.of(context).size.width,
-            onPress: _loading
-                ? () {}
-                : _inCalling
-                    ? _stopCall
-                    : _makeCall,
-          )
+          _inCalling
+              ? SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _stopCall,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(40.0),
+                      ),
+                    ),
+                    child: Text(
+                      'STOP',
+                      style: normalStyle(
+                        weight: FontWeight.w600,
+                        color: Colors.white,
+                      ).copyWith(letterSpacing: 1),
+                    ),
+                  ),
+                )
+              : customButton(
+                  'START',
+                  width: MediaQuery.of(context).size.width,
+                  onPress: _loading ? () {} : _makeCall,
+                )
         ]),
       ),
     );
