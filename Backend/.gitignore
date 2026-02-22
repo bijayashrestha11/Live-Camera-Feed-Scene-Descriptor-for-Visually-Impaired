@@ -1,60 +1,134 @@
-# models
-ml-models/
-frames/
+# Scene Descriptor Backend - Git Ignore
 
-# Miscellaneous
-*.class
-*.log
-*.pyc
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# =============================================================================
+# Virtual Environments
+# =============================================================================
+venv/
+ENV/
+env/
+.venv/
+
+# =============================================================================
+# IDE / Editor
+# =============================================================================
+.idea/
+.vscode/
 *.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.iml
+*.ipr
+*.iws
+
+# =============================================================================
+# Testing / Coverage
+# =============================================================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# =============================================================================
+# Type Checking
+# =============================================================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# =============================================================================
+# Logs
+# =============================================================================
+logs/*.log
+*.log
+
+# =============================================================================
+# Environment
+# =============================================================================
+.env
+.env.local
+.env.*.local
+
+# =============================================================================
+# ML Models (large files)
+# =============================================================================
+ml-models/
+*.pkl
+*.pth
+*.pt
+*.bin
+*.safetensors
+
+# =============================================================================
+# Data Files
+# =============================================================================
+data/test_videos/*.mp4
+data/batch_videos/*.mp4
+data/output/
+*.csv
+!.gitkeep
+
+# =============================================================================
+# Generated Files
+# =============================================================================
+caption.csv
+captions.csv
+frames/
+frame/
+
+# =============================================================================
+# OS Files
+# =============================================================================
 .DS_Store
+Thumbs.db
 .atom/
 .buildlog/
 .history
 .svn/
 
-# virtual environment
-.venv
-.env
+# =============================================================================
+# Docker
+# =============================================================================
+.docker/
 
-
-# test files
-test.py
-
-# remove temp dir
-frame
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/build/
-
-# Web related
-lib/generated_plugin_registrant.dart
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# =============================================================================
+# Old/Legacy Files (can be deleted after migration)
+# =============================================================================
+# These files are kept in the repo root for reference but are superseded
+# by the new modular structure in src/scene_descriptor/
+# check.py
+# a.txt
+# install.py
+# caption.py
+# test2.py
+# check/
+# videos/
